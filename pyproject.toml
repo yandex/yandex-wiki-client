@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yandex-wiki-client"
+version = "0.2.0"
+description = "Python client for the Yandex Wiki API"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "Yandex LLC"}]
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.24,<1",
+    "pydantic>=2,<3",
+]
+
+[tool.setuptools]
+package-dir = { yandex_wiki_client = "." }
+packages = [
+    "yandex_wiki_client",
+    "yandex_wiki_client.api",
+    "yandex_wiki_client.models",
+]
