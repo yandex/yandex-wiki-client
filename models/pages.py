@@ -98,6 +98,7 @@ class Owner(_Base):
 
 
 class PageFullDetails(PageDetails):
+    last_revision_id: int | None = None
     redirect: Redirect | None = None
     breadcrumbs: list[Breadcrumb] | None = None
     attributes: PageAttributes | None = None

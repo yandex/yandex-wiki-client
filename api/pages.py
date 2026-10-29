@@ -77,8 +77,10 @@ class PageApi(BaseApi):
         owner: dict[str, Any] | None = None,
         is_silent: bool = False,
         allow_merge: bool = False,
+        revision: int | None = None,
     ) -> PageDetails:
         body = exclude_none(
+            revision=str(revision) if revision is not None else None,
             title=title,
             content=content,
             redirect=redirect,
@@ -186,10 +188,16 @@ class PageApi(BaseApi):
         anchor: dict[str, Any] | None = None,
         fields: list[str] | None = None,
         is_silent: bool = False,
+        revision: int | None = None,
     ) -> Page:
         payload = {
             'content': content,
-            **exclude_none(body=body, section=section, anchor=anchor),
+            **exclude_none(
+                body=body,
+                section=section,
+                anchor=anchor,
+                revision=str(revision) if revision is not None else None,
+            ),
         }
         params = {
             'is_silent': is_silent,
