@@ -10,6 +10,7 @@ import httpx
 
 from .exceptions import (
     NetworkError,
+    WikiClientError,
     error_from_response,
 )
 
@@ -29,9 +30,13 @@ def _atomic_download(destination: Path) -> Iterator[BinaryIO]:
         temporary_path.unlink(missing_ok=True)
 
 
-def _write_download(response: httpx.Response, destination: Path) -> None:
+def _write_download(response: httpx.Response, destination: Path, max_bytes: int | None = None) -> None:
     with _atomic_download(destination) as output:
-        for chunk in response.iter_bytes():
+        size = 0
+        for chunk in response.iter_bytes(chunk_size=64 * 1024):
+            size += len(chunk)
+            if max_bytes is not None and size > max_bytes:
+                raise WikiClientError(f'File exceeds the transfer limit of {max_bytes} bytes')
             output.write(chunk)
 
 
@@ -85,7 +90,23 @@ class HttpClient:
             base_url=base_url,
             headers=headers,
             timeout=httpx.Timeout(timeout),
+            event_hooks={'request': [self._strip_redirect_credentials]},
         )
+
+    def _strip_redirect_credentials(self, request: httpx.Request) -> None:
+        base = self._http.base_url
+        if (request.url.scheme, request.url.host, request.url.port) == (base.scheme, base.host, base.port):
+            return
+        if request.url.scheme != 'https' or request.url.username or request.url.password:
+            raise WikiClientError('File redirects must use HTTPS without credentials in the URL')
+        # HTTPX removes Authorization across origins, but not custom TVM headers.
+        # Leave redirect handling to HTTPX and strip API headers before sending.
+        public_headers = {'accept', 'accept-encoding', 'connection', 'content-type', 'user-agent'}
+        for name in self._http.headers:
+            if name.lower() not in public_headers:
+                request.headers.pop(name, None)
+        request.headers.pop('authorization', None)
+        request.headers.pop('cookie', None)
 
     def __enter__(self) -> 'HttpClient':
         return self
@@ -136,11 +157,12 @@ class HttpClient:
         destination: str | Path,
         *,
         params: dict[str, Any] | None = None,
+        max_bytes: int | None = None,
     ) -> None:
         url_path = path.lstrip('/')
         destination = Path(destination)
 
-        self._download_once(method, url_path, destination, params)
+        self._download_once(method, url_path, destination, params, max_bytes)
 
     def _request(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
         url_path = path.lstrip('/')
@@ -157,6 +179,7 @@ class HttpClient:
         url_path: str,
         destination: Path,
         params: dict[str, Any] | None,
+        max_bytes: int | None = None,
     ) -> httpx.Response:
         with self._http.stream(
             method,
@@ -167,7 +190,7 @@ class HttpClient:
             if response.status_code >= 400:
                 response.read()
             else:
-                _write_download(response, destination)
+                _write_download(response, destination, max_bytes)
             return response
 
 

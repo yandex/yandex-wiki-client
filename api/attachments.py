@@ -70,8 +70,20 @@ class AttachmentApi(BaseApi):
             params={'url': url.lstrip('/'), 'download': True},
         )
 
-    def download_by_id(self, page_id: int, file_id: int, destination: str | Path) -> None:
-        self._client.http.download('GET', f'pages/{page_id}/attachments/{file_id}/download', destination)
+    def download_by_id(
+        self,
+        page_id: int,
+        file_id: int,
+        destination: str | Path,
+        *,
+        max_bytes: int | None = None,
+    ) -> None:
+        self._client.http.download(
+            'GET',
+            f'pages/{page_id}/attachments/{file_id}/download',
+            destination,
+            max_bytes=max_bytes,
+        )
 
     def download_preview(self, page_id: int, file_id: int, destination: str | Path) -> None:
         self._client.http.download('GET', f'pages/{page_id}/attachments/{file_id}/preview', destination)
