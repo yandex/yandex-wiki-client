@@ -1,12 +1,15 @@
 from __future__ import annotations
+import json
 from typing import Any, Iterator
 
 from .base import BaseApi
+from ..exceptions import WikiClientError
 from ..models.operations import OperationCreated
 from ..models.pages import (
     DeleteResult,
     Page,
     PageDetails,
+    PageDiff,
     PageGridResource,
     PageRef,
     PageResource,
@@ -130,6 +133,24 @@ class PageApi(BaseApi):
         }
         data = self._request('POST', 'pages/move', params={'dry_run': dry_run}, json=body)
         return self._parse(OperationCreated, data)
+
+    def get_diff(self, page_id: int, revision_id_from: int, revision_id_to: int) -> PageDiff:
+        """Compare published revisions through the Intranet API."""
+        wanted = {revision_id_from, revision_id_to}
+        revisions = self.list_revisions_page(page_id, ids=sorted(wanted), page_size=len(wanted))
+        # The diff endpoint resolves the page from revisions, ignoring the URL id.
+        if {revision.id for revision in revisions.results} != wanted:
+            raise WikiClientError('Both revisions must belong to the requested page')
+        data = self._request(
+            'GET',
+            f'pages/{page_id}/diff',
+            params={
+                'target_a': json.dumps({'revision': revision_id_from}),
+                'target_b': json.dumps({'revision': revision_id_to}),
+            },
+        )
+
+        return self._parse(PageDiff, data)
 
     def list_revisions(
         self,
