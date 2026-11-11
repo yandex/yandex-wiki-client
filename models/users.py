@@ -11,7 +11,7 @@ class OrganizationIdentity(_Base):
 
 class UserMe(_Base):
     username: str
-    homecluster: str | None = None
+    home_cluster: str | None = None
     identity: UserIdentity
     org: OrganizationIdentity
 
