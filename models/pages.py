@@ -79,7 +79,7 @@ class AccessPolicy(_Base):
 
 class PageAccessItem(_Base):
     id: str
-    created_at: datetime
+    created_at: datetime | None = None
     user: User | None = None
     group: Group | None = None
     role: str
