@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from .attachments import Attachment
@@ -53,27 +53,6 @@ class PageRevision(_Base):
     page_type: str
     revision_draft: RevisionDraftInfo | None = None
     publication: PublicPageRevision | None = None
-
-
-class PageContentDiff(_Base):
-    diff: list[Any]
-    type: Literal['page'] = 'page'
-
-
-class WysiwygContentDiff(_Base):
-    diff: list[Any]
-    type: Literal['wysiwyg'] = 'wysiwyg'
-
-
-class GridContentDiff(_Base):
-    diff: Any = None
-    column_titles: Any = None
-    type: Literal['grid'] = 'grid'
-
-
-class PageDiff(_Base):
-    title_diff: list[Any]
-    content: PageContentDiff | WysiwygContentDiff | GridContentDiff
 
 
 class Actuality(_Base):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from .base import BaseApi
@@ -19,17 +18,6 @@ from ..utils import NOT_SET, exclude_none, exclude_not_set
 
 
 class GridApi(BaseApi):
-    def export(
-        self,
-        grid_id: str,
-        destination: str | Path,
-        *,
-        format: Literal['csv', 'xls', 'docx'] = 'csv',
-        max_bytes: int | None = None,
-    ) -> None:
-        """Download a native grid export through the Intranet API."""
-        self._client.http.download('GET', f'grids/{grid_id}/export/{format}', destination, max_bytes=max_bytes)
-
     def create(self, page: PageIdentity, title: str) -> Grid:
         body = {
             'page': page.dict(exclude_none=True),
